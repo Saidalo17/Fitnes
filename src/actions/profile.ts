@@ -1,11 +1,15 @@
 "use server";
 
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { db } from "@/db/client";
 import {
+  blocks,
+  friendships,
+  messages,
   profiles,
+  reports,
   sessionSets,
   userAchievements,
   users,
@@ -92,6 +96,16 @@ export async function deleteAccount() {
   await db.delete(workoutSessions).where(eq(workoutSessions.userId, userId));
   await db.delete(userAchievements).where(eq(userAchievements.userId, userId));
   await db.delete(weightLogs).where(eq(weightLogs.userId, userId));
+  await db
+    .delete(messages)
+    .where(or(eq(messages.senderId, userId), eq(messages.recipientId, userId)));
+  await db
+    .delete(friendships)
+    .where(or(eq(friendships.requesterId, userId), eq(friendships.addresseeId, userId)));
+  await db.delete(blocks).where(or(eq(blocks.blockerId, userId), eq(blocks.blockedId, userId)));
+  await db
+    .delete(reports)
+    .where(or(eq(reports.reporterId, userId), eq(reports.reportedId, userId)));
   await db.delete(profiles).where(eq(profiles.userId, userId));
   await db.delete(users).where(eq(users.id, userId));
   await signOut({ redirectTo: "/login" });

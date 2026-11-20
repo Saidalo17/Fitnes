@@ -54,6 +54,10 @@ export const profiles = sqliteTable("profiles", {
     .notNull()
     .default("system"),
   reduceEffects: integer("reduce_effects", { mode: "boolean" }).notNull().default(false),
+  bio: text("bio"),
+  status: text("status"),
+  avatar: text("avatar"),
+  discoverable: integer("discoverable", { mode: "boolean" }).notNull().default(true),
 });
 
 export const weightLogs = sqliteTable(
@@ -261,4 +265,71 @@ export const chatMessages = sqliteTable(
     createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
   },
   (t) => [index("chat_messages_user_date").on(t.userId, t.createdAt)],
+);
+
+export const friendships = sqliteTable(
+  "friendships",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    requesterId: text("requester_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addresseeId: text("addressee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status", { enum: ["pending", "accepted"] })
+      .notNull()
+      .default("pending"),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+  },
+  (t) => [
+    uniqueIndex("friendships_pair").on(t.requesterId, t.addresseeId),
+    index("friendships_addressee").on(t.addresseeId, t.status),
+  ],
+);
+
+export const blocks = sqliteTable(
+  "blocks",
+  {
+    blockerId: text("blocker_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    blockedId: text("blocked_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+  },
+  (t) => [primaryKey({ columns: [t.blockerId, t.blockedId] })],
+);
+
+export const reports = sqliteTable("reports", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  reporterId: text("reporter_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  reportedId: text("reported_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  reason: text("reason").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+});
+
+export const messages = sqliteTable(
+  "messages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    senderId: text("sender_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    recipientId: text("recipient_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull().default(now),
+    readAt: integer("read_at", { mode: "timestamp" }),
+  },
+  (t) => [
+    index("messages_pair").on(t.senderId, t.recipientId, t.id),
+    index("messages_unread").on(t.recipientId, t.readAt),
+  ],
 );

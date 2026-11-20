@@ -3,6 +3,7 @@ import { db } from "@/db/client";
 import { users } from "@/db/schema";
 import { ProfileView } from "@/components/profile/profile-view";
 import type { Draft } from "@/components/profile/fields";
+import { MySocialProfile } from "@/components/social/my-social-profile";
 import { getT } from "@/i18n/server";
 import { requireOnboardedUser } from "@/lib/session";
 
@@ -28,12 +29,23 @@ export default async function ProfilePage() {
   };
 
   return (
-    <ProfileView
-      initial={initial}
-      name={user?.name ?? ""}
-      email={user?.email ?? ""}
-      xp={profile.xp}
-      reduceEffects={profile.reduceEffects}
-    />
+    <div className="mx-auto flex max-w-2xl flex-col gap-5">
+      <ProfileView
+        initial={initial}
+        name={user?.name ?? ""}
+        email={user?.email ?? ""}
+        xp={profile.xp}
+        reduceEffects={profile.reduceEffects}
+      />
+      <MySocialProfile
+        name={user?.name ?? ""}
+        initial={{
+          avatar: profile.avatar,
+          bio: profile.bio ?? "",
+          status: profile.status ?? "",
+          discoverable: profile.discoverable,
+        }}
+      />
+    </div>
   );
 }

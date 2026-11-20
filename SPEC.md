@@ -232,6 +232,14 @@ AUTH_URL=http://localhost:3000
 
 **ИИ-помощник:** `POST /api/coach` → `lib/coach-server.ts`. Модель `claude-opus-5-5`, `output_config.effort = "low"`, структурированный ответ `{on_topic, reply}` (JSON schema). При `on_topic=false` текст модели не используется, пользователь видит фиксированный отказ (RU/EN), пара «вопрос — отказ» не попадает в контекст дальше. Включены серверные `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`). Защита: сессия, проверка Origin, ≤1000 символов, 20 сообщений / 10 минут на пользователя, история ≤12 сообщений. В запрос уходят только цель, уровень, место, пол, возраст, рост, вес и суточные цели — без имени и email. Переменная окружения: `ANTHROPIC_API_KEY`. Затраты: платный внешний сервис — следите за расходом в консоли Anthropic.
 
+## 14.3 Друзья и чат
+- Таблицы: `friendships` (requester, addressee, status pending|accepted, уникальная пара), `blocks`, `reports`, `messages` (sender, recipient, body, created_at, read_at). В `profiles`: `bio`, `status`, `avatar` (data URL jpeg/png/webp до 80 КБ), `discoverable`.
+- Фото хранится в БД как маленький data URL (внешнее хранилище не нужно); CSP уже разрешает `img-src data:`.
+- Доступ: читать профиль и переписку можно только с другом; блокировка в любую сторону закрывает чат и поиск.
+- Доставка сообщений: опрос `GET /api/chat/[userId]?after=<id>` каждые 3 с (пока вкладка видна); отправка — Server Action `sendMessage`, лимит 30/мин на пользователя.
+- Server Actions: `saveSocialProfile`, `sendFriendRequest`, `respondFriendRequest`, `removeFriend`, `blockUser`, `unblockUser`, `reportUser`, `sendMessage`.
+- Страницы: `/friends` (поиск, запросы, друзья), `/friends/[id]` (профиль), `/chat/[id]`.
+
 ## 15. Нефункциональные цели
 
 - LCP ≤ 2.5с, CLS ≤ 0.1, TTI ≤ 3.5с на 4G.

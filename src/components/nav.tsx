@@ -1,6 +1,6 @@
 "use client";
 
-import { Bot, ChartLine, Dumbbell, Home, Trophy, User, Utensils } from "lucide-react";
+import { Bot, ChartLine, Dumbbell, Home, Trophy, User, Users, Utensils } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useT } from "@/i18n/client";
@@ -14,6 +14,7 @@ const items = [
   { href: "/workouts", key: "nav.workouts", icon: Dumbbell, mobile: true },
   { href: "/nutrition", key: "nav.nutrition", icon: Utensils, mobile: true },
   { href: "/coach", key: "nav.coach", icon: Bot, mobile: true },
+  { href: "/friends", key: "nav.friends", icon: Users, mobile: true },
   { href: "/analytics", key: "nav.analytics", icon: ChartLine, mobile: false },
   { href: "/achievements", key: "nav.achievements", icon: Trophy, mobile: false },
   { href: "/profile", key: "nav.profile", icon: User, mobile: true },
@@ -24,8 +25,18 @@ function useActive() {
   return (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 }
 
+function Badge({ n }: { n: number }) {
+  const t = useT();
+  return (
+    <span className="num absolute -right-2 -top-1.5 min-w-4 rounded-full bg-accent px-1 text-center text-[10px] leading-4 text-on-accent">
+      {n}
+      <span className="sr-only"> {t("social.newItems")}</span>
+    </span>
+  );
+}
+
 /** Нижняя панель (< 1024px). */
-export function BottomNav() {
+export function BottomNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
   const isActive = useActive();
   const t = useT();
   return (
@@ -46,7 +57,10 @@ export function BottomNav() {
                   isActive(href) ? "text-accent-text" : "text-muted",
                 )}
               >
-                <Icon size={22} strokeWidth={1.75} />
+                <span className="relative">
+                  <Icon size={22} strokeWidth={1.75} />
+                  {href === "/friends" && friendsBadge > 0 && <Badge n={friendsBadge} />}
+                </span>
                 {t(key)}
               </Link>
             </li>
@@ -57,7 +71,7 @@ export function BottomNav() {
 }
 
 /** Боковая панель (≥ 1024px). */
-export function SideNav() {
+export function SideNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
   const isActive = useActive();
   const t = useT();
   return (
@@ -81,6 +95,12 @@ export function SideNav() {
               >
                 <Icon size={20} strokeWidth={1.75} />
                 {t(key)}
+                {href === "/friends" && friendsBadge > 0 && (
+                  <span className="num ml-auto rounded-full bg-accent px-1.5 text-xs text-on-accent">
+                    {friendsBadge}
+                    <span className="sr-only"> {t("social.newItems")}</span>
+                  </span>
+                )}
               </Link>
             </li>
           ))}

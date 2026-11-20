@@ -8,6 +8,7 @@ const PAGES = [
   "/workouts/1",
   "/nutrition",
   "/coach",
+  "/friends",
   "/workout/1/run",
   "/analytics",
   "/achievements",

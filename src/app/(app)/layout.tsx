@@ -6,17 +6,19 @@ import { FxSync } from "@/components/fx-sync";
 import { TzSync } from "@/components/tz-sync";
 import { getReduceEffects, getTzOffset } from "@/lib/prefs";
 import { requireOnboardedUser } from "@/lib/session";
+import { getSocialBadge } from "@/lib/social-data";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const { profile } = await requireOnboardedUser();
+  const { userId, profile } = await requireOnboardedUser();
+  const friendsBadge = await getSocialBadge(userId);
   const tz = await getTzOffset();
   const fxOff = await getReduceEffects();
   return (
     <>
       <TzSync current={tz} />
       <FxSync wantOff={profile.reduceEffects} currentOff={fxOff} />
-      <SideNav />
-      <BottomNav />
+      <SideNav friendsBadge={friendsBadge} />
+      <BottomNav friendsBadge={friendsBadge} />
       <div className="lg:pl-60">
         <header className="flex items-center justify-between px-4 pt-4 lg:hidden">
           <span className="font-display text-2xl font-extrabold">

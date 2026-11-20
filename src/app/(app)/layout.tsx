@@ -2,16 +2,19 @@ import { BottomNav, SideNav } from "@/components/nav";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { FxSync } from "@/components/fx-sync";
 import { TzSync } from "@/components/tz-sync";
-import { getTzOffset } from "@/lib/prefs";
+import { getReduceEffects, getTzOffset } from "@/lib/prefs";
 import { requireOnboardedUser } from "@/lib/session";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  await requireOnboardedUser();
+  const { profile } = await requireOnboardedUser();
   const tz = await getTzOffset();
+  const fxOff = await getReduceEffects();
   return (
     <>
       <TzSync current={tz} />
+      <FxSync wantOff={profile.reduceEffects} currentOff={fxOff} />
       <SideNav />
       <BottomNav />
       <div className="lg:pl-60">

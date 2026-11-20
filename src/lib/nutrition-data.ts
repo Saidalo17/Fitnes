@@ -1,4 +1,5 @@
 import { and, asc, eq } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { db } from "@/db/client";
 import { foods, mealLogs, waterLogs } from "@/db/schema";
 import type { Goal } from "./bmi";
@@ -51,6 +52,13 @@ export function targetsFromProfile(p: ProfileLike): { goal: Goal; targets: Targe
   };
 }
 
+/** Справочник продуктов одинаков для всех — кешируем на час. */
+const getFoodsCached = unstable_cache(
+  () => db.select().from(foods).orderBy(asc(foods.category), asc(foods.name)),
+  ["foods-catalog"],
+  { revalidate: 3600 },
+);
+
 export async function getNutritionPage(
   userId: string,
   profile: ProfileLike,
@@ -60,7 +68,7 @@ export async function getNutritionPage(
   const { goal, targets } = targetsFromProfile(profile);
 
   const [allFoods, logs, water] = await Promise.all([
-    db.select().from(foods).orderBy(asc(foods.category), asc(foods.name)),
+    getFoodsCached(),
     db
       .select({
         id: mealLogs.id,

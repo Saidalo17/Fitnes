@@ -1,4 +1,3 @@
-import { eq } from "drizzle-orm";
 import {
   Activity,
   Dumbbell,
@@ -11,17 +10,17 @@ import {
   Trophy,
   Utensils,
 } from "lucide-react";
-import { db } from "@/db/client";
-import { users } from "@/db/schema";
 import { CategoryTile } from "@/components/home/category-tile";
 import { StatStrip } from "@/components/home/stat-strip";
 import { LevelCard } from "@/components/gamification/level-card";
+import { PeopleSearch } from "@/components/social/people-search";
 import { RevealGroup, RevealItem } from "@/components/reveal";
 import { WorkoutCard } from "@/components/workouts/workout-card";
 import { getT } from "@/i18n/server";
 import { getTzOffset } from "@/lib/prefs";
 import { levelInfo } from "@/lib/xp";
 import { requireOnboardedUser } from "@/lib/session";
+import { getSocialBadge } from "@/lib/social-data";
 import { getActivityStats } from "@/lib/stats";
 import { getCatalogCounts, getRecommended } from "@/lib/workouts";
 
@@ -37,11 +36,10 @@ const MUSCLES = [
 ] as const;
 
 export default async function HomePage() {
-  const { userId, profile } = await requireOnboardedUser();
+  const { userId, profile, name } = await requireOnboardedUser();
   const { t, locale } = await getT();
 
-  const [[user], stats, counts, recommended] = await Promise.all([
-    db.select({ name: users.name }).from(users).where(eq(users.id, userId)).limit(1),
+  const [stats, counts, recommended, badge] = await Promise.all([
     getActivityStats(userId, await getTzOffset()),
     getCatalogCounts(),
     profile.goal && profile.place && profile.level
@@ -52,9 +50,10 @@ export default async function HomePage() {
           level: profile.level,
         })
       : Promise.resolve([]),
+    getSocialBadge(userId),
   ]);
 
-  const firstName = user?.name?.trim().split(" ")[0];
+  const firstName = name?.trim().split(" ")[0];
   const count = (n?: number) => t("home.count", { n: n ?? 0 });
 
   return (
@@ -78,6 +77,10 @@ export default async function HomePage() {
 
       <RevealItem>
         <LevelCard xp={profile.xp} t={t} />
+      </RevealItem>
+
+      <RevealItem>
+        <PeopleSearch showFriendsLink requests={badge.requests} />
       </RevealItem>
 
       <RevealItem>

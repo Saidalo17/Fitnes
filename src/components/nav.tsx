@@ -1,6 +1,16 @@
 "use client";
 
-import { Bot, ChartLine, Dumbbell, Home, Trophy, User, Users, Utensils } from "lucide-react";
+import {
+  Bot,
+  ChartLine,
+  Dumbbell,
+  Home,
+  MessageCircle,
+  Trophy,
+  User,
+  Users,
+  Utensils,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useT } from "@/i18n/client";
@@ -13,12 +23,16 @@ const items = [
   { href: "/", key: "nav.home", icon: Home, mobile: true },
   { href: "/workouts", key: "nav.workouts", icon: Dumbbell, mobile: true },
   { href: "/nutrition", key: "nav.nutrition", icon: Utensils, mobile: true },
-  { href: "/coach", key: "nav.coach", icon: Bot, mobile: true },
-  { href: "/friends", key: "nav.friends", icon: Users, mobile: true },
+  { href: "/coach", key: "nav.coach", icon: Bot, mobile: false },
+  { href: "/friends", key: "nav.friends", icon: Users, mobile: false },
+  { href: "/chat", key: "nav.chat", icon: MessageCircle, mobile: true },
   { href: "/analytics", key: "nav.analytics", icon: ChartLine, mobile: false },
   { href: "/achievements", key: "nav.achievements", icon: Trophy, mobile: false },
   { href: "/profile", key: "nav.profile", icon: User, mobile: true },
 ] as const;
+
+/** Счётчики по разделам: { "/friends": запросы, "/chat": непрочитанные }. */
+export type NavBadges = Partial<Record<string, number>>;
 
 function useActive() {
   const pathname = usePathname();
@@ -36,7 +50,7 @@ function Badge({ n }: { n: number }) {
 }
 
 /** Нижняя панель (< 1024px). */
-export function BottomNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
+export function BottomNav({ badges = {} }: { badges?: NavBadges }) {
   const isActive = useActive();
   const t = useT();
   return (
@@ -59,7 +73,7 @@ export function BottomNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
               >
                 <span className="relative">
                   <Icon size={22} strokeWidth={1.75} />
-                  {href === "/friends" && friendsBadge > 0 && <Badge n={friendsBadge} />}
+                  {(badges[href] ?? 0) > 0 && <Badge n={badges[href]!} />}
                 </span>
                 {t(key)}
               </Link>
@@ -71,7 +85,7 @@ export function BottomNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
 }
 
 /** Боковая панель (≥ 1024px). */
-export function SideNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
+export function SideNav({ badges = {} }: { badges?: NavBadges }) {
   const isActive = useActive();
   const t = useT();
   return (
@@ -95,9 +109,9 @@ export function SideNav({ friendsBadge = 0 }: { friendsBadge?: number }) {
               >
                 <Icon size={20} strokeWidth={1.75} />
                 {t(key)}
-                {href === "/friends" && friendsBadge > 0 && (
+                {(badges[href] ?? 0) > 0 && (
                   <span className="num ml-auto rounded-full bg-accent px-1.5 text-xs text-on-accent">
-                    {friendsBadge}
+                    {badges[href]}
                     <span className="sr-only"> {t("social.newItems")}</span>
                   </span>
                 )}

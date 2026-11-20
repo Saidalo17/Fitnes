@@ -229,12 +229,60 @@ export async function getConversation(
   }));
 }
 
-/** Для значка в меню: непрочитанные сообщения + входящие запросы. */
+/** Для значков в меню: входящие запросы в друзья и непрочитанные сообщения — одним запросом к БД. */
 export async function getSocialBadge(me: string) {
-  const [{ n: unread }] = await db
-    .select({ n: sql<number>`count(*)` })
-    .from(messages)
-    .where(and(eq(messages.recipientId, me), isNull(messages.readAt)));
-  const requests = await listIncomingRequests(me);
-  return Number(unread) + requests.length;
+  const rows = await db.all<{ requests: number; unread: number }>(sql`
+    select
+      (select count(*) from friendships f
+        where f.addressee_id = ${me} and f.status = 'pending'
+          and f.requester_id not in (select blocked_id from blocks where blocker_id = ${me})
+          and f.requester_id not in (select blocker_id from blocks where blocked_id = ${me}))
+      as requests,
+      (select count(*) from messages m
+        where m.recipient_id = ${me} and m.read_at is null
+          and m.sender_id not in (select blocked_id from blocks where blocker_id = ${me})
+          and m.sender_id not in (select blocker_id from blocks where blocked_id = ${me}))
+      as unread`);
+  return { requests: Number(rows[0]?.requests ?? 0), unread: Number(rows[0]?.unread ?? 0) };
+}
+
+export type Conversation = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  status: string | null;
+  unread: number;
+  last: { body: string; mine: boolean; at: number } | null;
+};
+
+/** Диалоги для раздела «Чат»: друзья, у кого есть переписка — сверху (по свежести), остальные ниже. */
+export async function listConversations(me: string): Promise<Conversation[]> {
+  const friends = await listFriends(me);
+  if (!friends.length) return [];
+  const lasts = await db.all<{
+    other: string;
+    body: string;
+    sender_id: string;
+    created_at: number;
+  }>(sql`
+    select case when m.sender_id = ${me} then m.recipient_id else m.sender_id end as other,
+           m.body, m.sender_id, m.created_at
+    from messages m
+    where m.id in (
+      select max(id) from messages
+      where sender_id = ${me} or recipient_id = ${me}
+      group by case when sender_id = ${me} then recipient_id else sender_id end
+    )`);
+  const byOther = new Map(lasts.map((l) => [l.other, l]));
+  return friends
+    .map((f) => {
+      const l = byOther.get(f.id);
+      return {
+        ...f,
+        last: l
+          ? { body: l.body, mine: l.sender_id === me, at: Number(l.created_at) * 1000 }
+          : null,
+      };
+    })
+    .sort((a, b) => (b.last?.at ?? 0) - (a.last?.at ?? 0) || a.name.localeCompare(b.name));
 }

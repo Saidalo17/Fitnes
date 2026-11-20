@@ -20,8 +20,8 @@ test("друзья и чат: поиск, запрос, статус, переп
   await a.goto("/profile");
   await a.getByLabel(/^Статус/).fill("Сегодня ноги");
   await a.getByLabel("О себе").fill("Люблю приседания");
-  await a.getByRole("button", { name: "Сохранить" }).last().click();
-  await expect(a.getByText("Сохранено").last()).toBeVisible();
+  await a.getByRole("button", { name: "Сохранить" }).first().click();
+  await expect(a.getByText("Сохранено").first()).toBeVisible();
 
   // Борис находит Алису и отправляет запрос
   await b.goto("/friends");
@@ -76,7 +76,7 @@ test("друзья и чат: поиск, запрос, статус, переп
   await expect(a.getByRole("button", { name: "Разблокировать" })).toBeVisible();
   await b.getByPlaceholder("Напишите сообщение…").fill("Ещё одно");
   await b.getByRole("button", { name: "Отправить" }).click();
-  await expect(b.getByRole("alert")).toBeVisible();
+  await expect(b.getByRole("alert").filter({ hasText: "блокировк" })).toBeVisible();
 
   await ctxA.close();
   await ctxB.close();

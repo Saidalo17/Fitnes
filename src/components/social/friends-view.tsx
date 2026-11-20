@@ -1,14 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import { searchPeopleAction } from "@/actions/social";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useT } from "@/i18n/client";
-import { SEARCH_MIN } from "@/lib/social";
-import type { PersonCard } from "@/lib/social-data";
 import { Avatar } from "./avatar";
+import { PeopleSearch } from "./people-search";
 import { PersonActions } from "./person-actions";
 
 type Friend = {
@@ -30,19 +25,6 @@ export function FriendsView({
   blocked: { id: string; name: string | null }[];
 }) {
   const t = useT();
-  const [q, setQ] = useState("");
-  const [results, setResults] = useState<PersonCard[] | null>(null);
-  const [pending, start] = useTransition();
-
-  function runSearch() {
-    if (Array.from(q.trim()).length < SEARCH_MIN) return;
-    start(async () => setResults(await searchPeopleAction(q)));
-  }
-  function search(e: React.FormEvent) {
-    e.preventDefault();
-    runSearch();
-  }
-
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6">
       <div>
@@ -50,45 +32,7 @@ export function FriendsView({
         <p className="mt-1 text-muted">{t("social.subtitle")}</p>
       </div>
 
-      <Card className="flex flex-col gap-3 p-5">
-        <form onSubmit={search} className="flex flex-col gap-2 sm:flex-row sm:items-end">
-          <label className="flex flex-1 flex-col gap-1.5 text-sm font-semibold">
-            {t("social.searchLabel")}
-            <input
-              value={q}
-              maxLength={60}
-              placeholder={t("social.searchPlaceholder")}
-              onChange={(e) => setQ(e.target.value)}
-              className="h-12 rounded-sm bg-surface-2 px-3 text-base font-normal outline-none focus:ring-2 focus:ring-accent"
-            />
-          </label>
-          <Button type="submit" disabled={pending}>
-            {t("social.search")}
-          </Button>
-        </form>
-        {results && (
-          <ul className="flex flex-col gap-2" aria-label={t("social.search")}>
-            {results.length === 0 && (
-              <li className="text-sm text-muted">{t("social.noResults")}</li>
-            )}
-            {results.map((p) => (
-              <li
-                key={p.id}
-                className="flex flex-wrap items-center gap-3 rounded-md border border-line p-3"
-              >
-                <Link
-                  href={`/friends/${p.id}`}
-                  className="flex flex-1 items-center gap-3 font-semibold"
-                >
-                  <Avatar src={p.avatar} name={p.name} />
-                  {p.name}
-                </Link>
-                <PersonActions id={p.id} relation={p.relation} compact onChanged={runSearch} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
+      <PeopleSearch />
 
       {requests.length > 0 && (
         <section className="flex flex-col gap-3">

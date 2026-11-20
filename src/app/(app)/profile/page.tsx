@@ -4,8 +4,11 @@ import { users } from "@/db/schema";
 import { ProfileView } from "@/components/profile/profile-view";
 import type { Draft } from "@/components/profile/fields";
 import { MySocialProfile } from "@/components/social/my-social-profile";
+import { PeopleSearch } from "@/components/social/people-search";
+import { ProfileHeader } from "@/components/social/profile-header";
 import { getT } from "@/i18n/server";
 import { requireOnboardedUser } from "@/lib/session";
+import { getSocialBadge } from "@/lib/social-data";
 
 export async function generateMetadata() {
   const { t } = await getT();
@@ -14,7 +17,11 @@ export async function generateMetadata() {
 
 export default async function ProfilePage() {
   const { userId, profile } = await requireOnboardedUser();
-  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const { t } = await getT();
+  const [[user], badge] = await Promise.all([
+    db.select().from(users).where(eq(users.id, userId)).limit(1),
+    getSocialBadge(userId),
+  ]);
 
   const initial: Draft = {
     sex: profile.sex ?? "",
@@ -29,23 +36,34 @@ export default async function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5">
-      <ProfileView
-        initial={initial}
-        name={user?.name ?? ""}
-        email={user?.email ?? ""}
-        xp={profile.xp}
-        reduceEffects={profile.reduceEffects}
-      />
-      <MySocialProfile
-        name={user?.name ?? ""}
-        initial={{
-          avatar: profile.avatar,
-          bio: profile.bio ?? "",
-          status: profile.status ?? "",
-          discoverable: profile.discoverable,
-        }}
-      />
-    </div>
+    <ProfileView
+      initial={initial}
+      reduceEffects={profile.reduceEffects}
+      top={
+        <>
+          <ProfileHeader
+            name={user?.name ?? ""}
+            email={user?.email ?? ""}
+            avatar={profile.avatar}
+            status={profile.status}
+            bio={profile.bio}
+            xp={profile.xp}
+            t={t}
+          />
+          <PeopleSearch showFriendsLink requests={badge.requests} />
+        </>
+      }
+      middle={
+        <MySocialProfile
+          name={user?.name ?? ""}
+          initial={{
+            avatar: profile.avatar,
+            bio: profile.bio ?? "",
+            status: profile.status ?? "",
+            discoverable: profile.discoverable,
+          }}
+        />
+      }
+    />
   );
 }

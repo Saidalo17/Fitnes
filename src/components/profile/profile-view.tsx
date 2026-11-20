@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { deleteAccount, logWeight, saveProfile, setReduceEffects } from "@/actions/profile";
 import { AchievementModal, type UnlockedItem } from "@/components/gamification/achievement-modal";
-import { LevelCard } from "@/components/gamification/level-card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { LogoutButton } from "@/components/logout-button";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -49,16 +48,16 @@ function Msg({ m }: { m?: Note }) {
 
 export function ProfileView({
   initial,
-  name,
-  email,
-  xp,
   reduceEffects,
+  top,
+  middle,
 }: {
   initial: Draft;
-  name: string;
-  email: string;
-  xp: number;
   reduceEffects: boolean;
+  /** Визитка профиля и поиск — показываются первыми. */
+  top?: React.ReactNode;
+  /** Редактирование публичного профиля. */
+  middle?: React.ReactNode;
 }) {
   const t = useT();
   const router = useRouter();
@@ -104,40 +103,9 @@ export function ProfileView({
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5">
-      <div>
-        <h1 className="text-4xl font-extrabold lg:text-5xl">{t("profile.title")}</h1>
-        <p className="mt-1 text-muted">
-          {name} · {email}
-        </p>
-      </div>
-
-      <LevelCard xp={xp} t={t} />
-
-      <Section title={t("profile.weightCard")}>
-        <WeightField draft={draft} set={set} errors={errors} />
-        <BmiBadge draft={draft} />
-        <div className="flex items-center gap-3">
-          <Button onClick={saveWeight} disabled={pending || draft.weightKg === savedWeight}>
-            {t("profile.logWeight")}
-          </Button>
-          <Msg m={weightMsg} />
-        </div>
-      </Section>
-
-      <Section title={t("profile.title")}>
-        <AboutFields draft={draft} set={set} errors={errors} />
-        <HeightField draft={draft} set={set} errors={errors} />
-        <GoalFields draft={draft} set={set} errors={errors} />
-        <PlaceFields draft={draft} set={set} errors={errors} />
-        <LevelFields draft={draft} set={set} errors={errors} />
-        <div className="flex items-center gap-3">
-          <Button onClick={save} disabled={pending}>
-            {pending ? t("common.wait") : t("profile.save")}
-          </Button>
-          <Msg m={msg} />
-        </div>
-      </Section>
+    <div className="mx-auto flex max-w-4xl flex-col gap-5">
+      {top}
+      {middle}
 
       <Section title={t("profile.appearance")}>
         <div className="flex flex-wrap gap-2">
@@ -170,6 +138,34 @@ export function ProfileView({
           </button>
         </div>
       </Section>
+
+      {/* Вес и тренировки — внизу, в один ряд (на узком экране — друг под другом) */}
+      <div className="grid items-start gap-5 md:grid-cols-2">
+        <Section title={t("profile.weightCard")}>
+          <WeightField draft={draft} set={set} errors={errors} />
+          <BmiBadge draft={draft} />
+          <div className="flex items-center gap-3">
+            <Button onClick={saveWeight} disabled={pending || draft.weightKg === savedWeight}>
+              {t("profile.logWeight")}
+            </Button>
+            <Msg m={weightMsg} />
+          </div>
+        </Section>
+
+        <Section title={t("profile.trainingCard")}>
+          <AboutFields draft={draft} set={set} errors={errors} />
+          <HeightField draft={draft} set={set} errors={errors} />
+          <GoalFields draft={draft} set={set} errors={errors} />
+          <PlaceFields draft={draft} set={set} errors={errors} />
+          <LevelFields draft={draft} set={set} errors={errors} />
+          <div className="flex items-center gap-3">
+            <Button onClick={save} disabled={pending}>
+              {pending ? t("common.wait") : t("profile.save")}
+            </Button>
+            <Msg m={msg} />
+          </div>
+        </Section>
+      </div>
 
       <Section title={t("profile.account")}>
         <div className="flex flex-wrap gap-3">

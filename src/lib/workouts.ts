@@ -1,4 +1,5 @@
-import { and, asc, eq, isNotNull, lte, sql } from "drizzle-orm";
+import { and, asc, eq, isNotNull, sql } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { db } from "@/db/client";
 import {
   exercises,
@@ -49,24 +50,32 @@ async function withCounts(rows: (typeof workouts.$inferSelect)[]): Promise<Worko
   return rows.map((r) => ({ ...r, exerciseCount: map.get(r.id) ?? 0 }));
 }
 
-export async function listWorkouts(f: WorkoutFilters): Promise<WorkoutListItem[]> {
-  const conds = [
-    f.place && eq(workouts.place, f.place),
-    f.goal && eq(workouts.goal, f.goal),
-    f.muscle && eq(workouts.targetMuscle, f.muscle),
-    f.level && eq(workouts.level, f.level),
-    f.maxDuration && lte(workouts.durationMin, f.maxDuration),
-  ].filter(Boolean) as ReturnType<typeof eq>[];
+/** Каталог одинаков для всех пользователей — кешируем на час (после seed подхватится сам). */
+const getCatalog = unstable_cache(
+  async () => {
+    const rows = await db
+      .select()
+      .from(workouts)
+      .orderBy(asc(workouts.durationMin), asc(workouts.id));
+    return withCounts(rows);
+  },
+  ["catalog-workouts"],
+  { revalidate: 3600 },
+);
 
-  const rows = await db
-    .select()
-    .from(workouts)
-    .where(conds.length ? and(...conds) : undefined)
-    .orderBy(asc(workouts.durationMin), asc(workouts.id));
-  return withCounts(rows);
+export async function listWorkouts(f: WorkoutFilters): Promise<WorkoutListItem[]> {
+  const all = await getCatalog();
+  return all.filter(
+    (w) =>
+      (!f.place || w.place === f.place) &&
+      (!f.goal || w.goal === f.goal) &&
+      (!f.muscle || w.targetMuscle === f.muscle) &&
+      (!f.level || w.level === f.level) &&
+      (!f.maxDuration || w.durationMin <= f.maxDuration),
+  );
 }
 
-export async function getWorkoutDetail(id: number) {
+async function loadWorkoutDetail(id: number) {
   const [workout] = await db.select().from(workouts).where(eq(workouts.id, id)).limit(1);
   if (!workout) return null;
   const items = await db
@@ -86,15 +95,24 @@ export async function getWorkoutDetail(id: number) {
   return { workout, items };
 }
 
+const getWorkoutDetailCached = unstable_cache(loadWorkoutDetail, ["workout-detail"], {
+  revalidate: 3600,
+});
+
+export async function getWorkoutDetail(id: number) {
+  return getWorkoutDetailCached(id);
+}
+
 /** Рекомендации по профилю; уже пройденные — в конце списка. */
 export async function getRecommended(userId: string, profile: RecProfile, limit = 3) {
-  const all = await db.select().from(workouts);
-  const done = await db
-    .select({ id: workoutSessions.workoutId })
-    .from(workoutSessions)
-    .where(and(eq(workoutSessions.userId, userId), isNotNull(workoutSessions.finishedAt)));
-  const picked = recommend(all, profile, new Set(done.map((d) => d.id)), limit);
-  return withCounts(picked);
+  const [all, done] = await Promise.all([
+    getCatalog(),
+    db
+      .select({ id: workoutSessions.workoutId })
+      .from(workoutSessions)
+      .where(and(eq(workoutSessions.userId, userId), isNotNull(workoutSessions.finishedAt))),
+  ]);
+  return recommend(all, profile, new Set(done.map((d) => d.id)), limit);
 }
 
 export type CatalogCounts = {
@@ -104,7 +122,7 @@ export type CatalogCounts = {
 };
 
 /** Сколько тренировок в каждой категории (для плиток главной). */
-export async function getCatalogCounts(): Promise<CatalogCounts> {
+async function loadCatalogCounts(): Promise<CatalogCounts> {
   const [byPlace, byGoal, byMuscle] = await Promise.all([
     db
       .select({ k: workouts.place, n: sql<number>`count(*)` })
@@ -124,3 +142,7 @@ export async function getCatalogCounts(): Promise<CatalogCounts> {
     Object.fromEntries(rows.filter((r) => r.k).map((r) => [r.k as string, Number(r.n)]));
   return { place: toMap(byPlace), goal: toMap(byGoal), muscle: toMap(byMuscle) };
 }
+
+export const getCatalogCounts = unstable_cache(loadCatalogCounts, ["catalog-counts"], {
+  revalidate: 3600,
+});

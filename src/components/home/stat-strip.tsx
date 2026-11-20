@@ -49,13 +49,15 @@ export function StatStrip({ t, streak, weightKg, weekDone, weekTarget }: Props) 
       <div className="flex flex-col gap-1 rounded-md border border-line bg-surface p-3 shadow-card">
         <span className="text-xs font-medium text-muted">{t("home.week")}</span>
         <span className="flex items-center gap-2">
-          <WeekRing
-            done={weekDone}
-            target={weekTarget}
-            size={32}
-            label={t("home.weekProgress", { done: weekDone, target: weekTarget })}
-          />
-          <span className="num text-xl leading-none">
+          <span className="max-[420px]:hidden">
+            <WeekRing
+              done={weekDone}
+              target={weekTarget}
+              size={32}
+              label={t("home.weekProgress", { done: weekDone, target: weekTarget })}
+            />
+          </span>
+          <span className="num whitespace-nowrap text-xl leading-none">
             {t("home.weekProgress", { done: weekDone, target: weekTarget })}
           </span>
         </span>

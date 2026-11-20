@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
@@ -18,6 +18,9 @@ const playfair = Playfair_Display({
   subsets: ["latin", "cyrillic"],
   weight: ["700", "800"],
 });
+
+// viewport-fit=cover: контент учитывает «чёлку» и жесты телефона (safe-area)
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export async function generateMetadata(): Promise<Metadata> {
   const { t } = await getT();

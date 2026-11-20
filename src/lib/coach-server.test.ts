@@ -3,6 +3,9 @@ import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Мокаем SDK: проверяем нашу логику (фильтр темы, история, лимиты), а не сеть и деньги.
+// вне сервера Next кеш недоступен — в тестах просто вызываем функцию
+vi.mock("next/cache", () => ({ unstable_cache: <T>(fn: T) => fn }));
+
 vi.mock("@anthropic-ai/sdk", () => {
   class APIError extends Error {
     status = 500;

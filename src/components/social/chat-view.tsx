@@ -17,7 +17,7 @@ export function ChatView({ otherId, initial }: { otherId: string; initial: ChatM
   const [err, setErr] = useState("");
   const [pending, start] = useTransition();
   const lastId = useRef(initial.at(-1)?.id ?? 0);
-  const bottom = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLUListElement>(null);
 
   const merge = useCallback((incoming: ChatMessage[]) => {
     if (!incoming.length) return;
@@ -55,7 +55,8 @@ export function ChatView({ otherId, initial }: { otherId: string; initial: ChatM
   }, [otherId, merge]);
 
   useEffect(() => {
-    bottom.current?.scrollIntoView({ block: "end" });
+    const el = box.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [list.length]);
 
   function submit(e: React.FormEvent) {
@@ -75,9 +76,10 @@ export function ChatView({ otherId, initial }: { otherId: string; initial: ChatM
   return (
     <div className="flex flex-col gap-3">
       <ul
+        ref={box}
         aria-live="polite"
         aria-label={t("social.inputLabel")}
-        className="flex min-h-[40dvh] flex-col gap-2 rounded-md border border-line bg-surface p-3"
+        className="flex h-[calc(100dvh-22rem)] min-h-64 flex-col overflow-y-auto gap-2 rounded-md border border-line bg-surface p-3"
       >
         {list.length === 0 && (
           <li className="m-auto text-sm text-muted">{t("social.noMessages")}</li>
@@ -101,7 +103,6 @@ export function ChatView({ otherId, initial }: { otherId: string; initial: ChatM
             </span>
           </li>
         ))}
-        <div ref={bottom} />
       </ul>
       <form onSubmit={submit} className="flex items-end gap-2">
         <label className="flex flex-1 flex-col gap-1 text-sm font-semibold">

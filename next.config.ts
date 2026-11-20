@@ -11,6 +11,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // меньше JS в бандле: подгружаем только используемые части больших библиотек
+  experimental: { optimizePackageImports: ["recharts", "framer-motion", "lucide-react"] },
   async headers() {
     // CSP с nonce выставляется в src/proxy.ts (нужен свой nonce на каждый запрос)
     return [{ source: "/:path*", headers: securityHeaders }];

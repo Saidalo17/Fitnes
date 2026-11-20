@@ -2,19 +2,20 @@
 
 import { Dumbbell } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useT } from "@/i18n/client";
 import { cn } from "@/lib/cn";
+import { ExerciseAnimation } from "./exercise-animation";
 
 type Props = {
   src?: string | null;
   poster?: string | null;
+  slug?: string | null;
+  muscle?: string | null;
   label: string;
   className?: string;
 };
 
 /** Зацикленный ролик без звука; загружается, только когда попадает в экран. */
-export function ExerciseVideo({ src, poster, label, className }: Props) {
-  const t = useT();
+export function ExerciseVideo({ src, poster, slug, muscle, label, className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -56,10 +57,11 @@ export function ExerciseVideo({ src, poster, label, className }: Props) {
         >
           <source src={src!} type={src!.endsWith(".mp4") ? "video/mp4" : "video/webm"} />
         </video>
+      ) : slug && !showVideo ? (
+        <ExerciseAnimation slug={slug} muscle={muscle} label={label} />
       ) : (
-        <div className="flex size-full flex-col items-center justify-center gap-1 text-muted">
+        <div className="flex size-full items-center justify-center text-muted">
           <Dumbbell size={28} strokeWidth={1.5} />
-          {!showVideo && <span className="text-xs">{t("workouts.noVideo")}</span>}
         </div>
       )}
     </div>

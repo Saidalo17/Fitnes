@@ -73,6 +73,8 @@ export default async function WorkoutPage({ params }: { params: Params }) {
                   <ExerciseVideo
                     src={it.exercise.videoUrl}
                     poster={it.exercise.posterUrl}
+                    slug={it.exercise.slug}
+                    muscle={it.exercise.muscleGroup}
                     label={name}
                   />
                   <div className="flex flex-col gap-1.5">

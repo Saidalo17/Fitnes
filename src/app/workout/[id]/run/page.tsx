@@ -30,6 +30,8 @@ export default async function RunPage({ params }: { params: Promise<{ id: string
     tips: it.exercise.tips ? localized(locale, it.exercise.tips, it.exercise.tipsEn) : null,
     videoUrl: it.exercise.videoUrl,
     posterUrl: it.exercise.posterUrl,
+    slug: it.exercise.slug,
+    muscle: it.exercise.muscleGroup,
     usesWeight: it.exercise.equipment !== "none" && !it.durationSec,
     sets: it.sets,
     reps: it.reps,

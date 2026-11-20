@@ -24,6 +24,8 @@ export type RunItem = {
   tips: string | null;
   videoUrl: string | null;
   posterUrl: string | null;
+  slug: string;
+  muscle: string;
   usesWeight: boolean;
   sets: number;
   reps: number | null;
@@ -318,7 +320,14 @@ export function WorkoutRunner({
       </header>
 
       <h1 className="mb-3 text-3xl font-extrabold leading-tight">{item.name}</h1>
-      <ExerciseVideo src={item.videoUrl} poster={item.posterUrl} label={item.name} />
+      <ExerciseVideo
+        key={item.exerciseId}
+        src={item.videoUrl}
+        poster={item.posterUrl}
+        slug={item.slug}
+        muscle={item.muscle}
+        label={item.name}
+      />
       {item.tips && <p className="mt-3 text-sm text-muted">{item.tips}</p>}
 
       <ul className="mt-5 flex flex-col gap-2">

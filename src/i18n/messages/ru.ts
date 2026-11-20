@@ -167,7 +167,6 @@ export const ru = {
     setsTime: "{sets} × {sec} сек",
     rest: "отдых {n} сек",
     tips: "Совет",
-    noVideo: "Видео скоро появится",
   },
   achievements: {
     title: "Награды",

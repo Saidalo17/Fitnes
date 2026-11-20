@@ -23,7 +23,11 @@ export function WorkoutCard({
       className="group flex flex-col gap-3 rounded-md border border-line bg-surface p-4 shadow-card transition hover:-translate-y-0.5 hover:border-accent"
     >
       <div className="flex h-24 items-center justify-center rounded-sm bg-accent-soft text-accent-text">
-        <Dumbbell size={36} strokeWidth={1.5} />
+        <Dumbbell
+          size={36}
+          strokeWidth={1.5}
+          className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110"
+        />
       </div>
       <div>
         <h3 className="font-display text-xl font-bold leading-tight">

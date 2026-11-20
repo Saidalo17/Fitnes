@@ -169,7 +169,6 @@ export const en: Messages = {
     setsTime: "{sets} × {sec} s",
     rest: "rest {n} s",
     tips: "Tip",
-    noVideo: "Video coming soon",
   },
   achievements: {
     title: "Awards",

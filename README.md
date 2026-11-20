@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Fitnes
 
-## Getting Started
+Фитнес-приложение: тренировки в зале и дома под вашу цель, питание с калориями, аналитика
+прогресса, достижения и ИИ-помощник по тренировкам и питанию. Русский и английский языки.
 
-First, run the development server:
+**Стек:** Next.js 16 (App Router), TypeScript, Tailwind CSS, Turso (libSQL) + Drizzle ORM, Auth.js,
+Recharts, Framer Motion, Anthropic SDK.
+
+Документация: [PRD](PRD.md) · [SPEC](SPEC.md) · [design](design.md) · [Tasks](Tasks.md) ·
+[tasksGuide](tasksGuide.md).
+
+## Запуск локально
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # заполните значения (см. ниже)
+npm run db:push              # создать таблицы
+npm run db:seed              # наполнить каталог: упражнения, тренировки, достижения, продукты
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Без `TURSO_DATABASE_URL` приложение использует локальный файл `local.db`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Переменные окружения
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Переменная           | Назначение                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------ |
+| `TURSO_DATABASE_URL` | адрес базы Turso, `libsql://…`                                                                   |
+| `TURSO_AUTH_TOKEN`   | токен доступа к базе                                                                             |
+| `AUTH_SECRET`        | секрет сессий, `openssl rand -base64 32`. **Для продакшена — свой, не копируйте из разработки**  |
+| `AUTH_URL`           | адрес сайта, например `https://fitnes.vercel.app`                                                |
+| `ANTHROPIC_API_KEY`  | ключ ИИ-помощника (платный сервис; без него страница `/coach` сообщит, что помощник не настроен) |
 
-## Learn More
+Файл `.env.local` в репозиторий не попадает. Секреты хранятся только в настройках хостинга.
 
-To learn more about Next.js, take a look at the following resources:
+## Команды
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| Команда                           | Что делает                                                                    |
+| --------------------------------- | ----------------------------------------------------------------------------- |
+| `npm run dev` / `build` / `start` | разработка / сборка / запуск сборки                                           |
+| `npm run lint`                    | ESLint                                                                        |
+| `npm test`                        | юнит-тесты (Vitest)                                                           |
+| `npm run test:e2e`                | сквозные тесты Playwright на локальной БД `e2e.db` (нужен установленный Edge) |
+| `npm run db:push`                 | применить схему к базе из `TURSO_DATABASE_URL`                                |
+| `npm run db:seed`                 | наполнить каталог (безопасно запускать повторно)                              |
+| `npm run format`                  | Prettier                                                                      |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Деплой на Vercel
 
-## Deploy on Vercel
+1. **GitHub.** Создайте пустой репозиторий (лучше приватный) и отправьте в него код.
+2. **Turso.** Для продакшена удобно завести отдельную базу (например, `fitnes-prod`): URL и токен — в панели Turso.
+   Примените схему и каталог: задайте `TURSO_DATABASE_URL` и `TURSO_AUTH_TOKEN` этой базы в окружении и выполните
+   `npm run db:push` и `npm run db:seed`.
+3. **Vercel.** _Add New → Project_ → выберите репозиторий. Фреймворк определится сам (Next.js).
+4. **Переменные окружения** (Settings → Environment Variables, окружение _Production_):
+   `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`, `AUTH_SECRET` (новый), `AUTH_URL` (адрес сайта), `ANTHROPIC_API_KEY`.
+5. **Deploy.** После сборки откройте `https://<ваш-домен>/api/health` — должно быть `{"ok":true}`.
+6. **Проверка по чек-листу приёмки** (PRD §11): регистрация → анкета → тренировка → график; светлая и тёмная темы;
+   вход/выход; помощник отвечает по теме и отказывает не по теме.
+7. **Регион.** В Settings → Functions выберите регион, ближайший к базе Turso (меньше задержка запросов).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Известные ограничения продакшена
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Ограничение частоты (вход, регистрация, ИИ-помощник) хранится в памяти экземпляра: на Vercel оно работает
+  «по экземпляру». Для строгого лимита подключите общее хранилище (например, Upstash Redis).
+- ИИ-помощник — платный внешний сервис. Следите за расходом в консоли Anthropic и при необходимости
+  уменьшите лимит в `src/lib/coach-server.ts`.
+- Расчёты калорий, БЖУ и воды ориентировочные и не заменяют консультацию врача или диетолога.

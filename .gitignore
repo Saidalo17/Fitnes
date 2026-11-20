@@ -39,3 +39,14 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local db
+local.db*
+test.db*
+
+e2e.db*
+test-results/
+playwright-report/
+
+# оставляем шаблон переменных в репозитории
+!.env.example
